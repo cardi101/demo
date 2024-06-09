@@ -1,0 +1,28 @@
+<!-- templates/add_executor.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Executor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Add Executor</h1>
+        <form action="{{ url_for('add_executor') }}" method="post">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required><br>
+            <button type="submit">Add Executor</button>
+        </form>
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
+        <a href="{{ url_for('index') }}">Back to Admin Page</a>
+    </div>
+</body>
+</html>

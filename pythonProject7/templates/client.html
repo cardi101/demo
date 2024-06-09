@@ -1,0 +1,36 @@
+<!-- templates/client.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client View</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Client Dashboard</h1>
+        <h2>Your Requests</h2>
+        <div id="requests">
+            {% for request in requests %}
+            <div class="request">
+                <p>Request Number: {{ request.request_number }}</p>
+                <p>Date Added: {{ request.date_added }}</p>
+                <p>Equipment: {{ request.equipment }}</p>
+                <p>Issue Type: {{ request.issue_type }}</p>
+                <p>Description: {{ request.description }}</p>
+                <p>Status: {{ request.status }}</p>
+                <p>Assigned To: {{ request.assigned_to }}</p>
+                <div>
+                    <strong>Comments:</strong>
+                    <ul>
+                        {% for comment in request.comments %}
+                        <li>{{ comment.text }} ({{ comment.date_added }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
+</body>
+</html>

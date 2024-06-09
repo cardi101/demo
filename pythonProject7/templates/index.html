@@ -1,0 +1,188 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Request Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Request Management System</h1>
+        <form id="requestForm">
+            <input type="text" id="request_number" placeholder="Request Number" required><br>
+            <input type="text" id="equipment" placeholder="Equipment" required><br>
+            <input type="text" id="issue_type" placeholder="Issue Type" required><br>
+            <textarea id="description" placeholder="Description" required></textarea><br>
+            <input type="text" id="client" placeholder="Client" required><br>
+            <select id="status">
+                <option value="в ожидании">В ожидании</option>
+                <option value="в работе">В работе</option>
+                <option value="выполнено">Выполнено</option>
+            </select><br>
+            <button type="button" onclick="addRequest()">Add Request</button>
+        </form>
+        <h2>All Requests</h2>
+        <input type="text" id="search" placeholder="Search Requests">
+        <button type="button" onclick="fetchRequests()">Search</button>
+        <div id="requests"></div>
+
+        <div id="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        <a href="{{ url_for('add_executor') }}">Add Executor</a>
+    </div>
+
+    <script>
+        async function fetchRequests() {
+            const search = document.getElementById('search').value;
+            const response = await fetch(`/requests?search=${search}`);
+            const requests = await response.json();
+            const requestDiv = document.getElementById('requests');
+            requestDiv.innerHTML = '';
+            requests.forEach(req => {
+                const reqElement = document.createElement('div');
+                reqElement.innerHTML = `
+                    <p>Request Number: ${req.request_number}</p>
+                    <p>Equipment: ${req.equipment}</p>
+                    <p>Issue Type: ${req.issue_type}</p>
+                    <p>Description: ${req.description}</p>
+                    <p>Client: ${req.client}</p>
+                    <p>Status: ${req.status}</p>
+                    <p>Assigned To: ${req.assigned_to}</p>
+                    <div>
+                        <strong>Comments:</strong>
+                        <ul>
+                            ${req.comments.map(comment => `<li>${comment.text} (${comment.date_added})</li>`).join('')}
+                        </ul>
+                        <textarea id="comment_${req.id}" placeholder="Add a comment"></textarea>
+                        <button onclick="addComment(${req.id})">Add Comment</button>
+                    </div>
+                    <button onclick="editRequest(${req.id})">Edit</button>
+                    <button onclick="deleteRequest(${req.id})">Delete</button>
+                    <select id="assigned_to_${req.id}" placeholder="Assign To">
+                        <option value="">None</option>
+                        {% for executor in executors %}
+                        <option value="{{ executor.name }}">{{ executor.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="assignTo(${req.id})">Assign</button>
+                `;
+                requestDiv.appendChild(reqElement);
+            });
+        }
+
+        async function addRequest() {
+            const requestNumber = document.getElementById('request_number').value;
+            const equipment = document.getElementById('equipment').value;
+            const issueType = document.getElementById('issue_type').value;
+            const description = document.getElementById('description').value;
+            const client = document.getElementById('client').value;
+            const status = document.getElementById('status').value;
+
+            const response = await fetch('/requests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request_number: requestNumber,
+                    equipment: equipment,
+                    issue_type: issueType,
+                    description: description,
+                    client: client,
+                    status: status
+                }),
+            });
+
+            if (response.ok) {
+                fetchRequests();
+            }
+        }
+
+        async function editRequest(id) {
+            const requestNumber = prompt("Enter new request number:");
+            const equipment = prompt("Enter new equipment:");
+            const issueType = prompt("Enter new issue type:");
+            const description = prompt("Enter new description:");
+            const client = prompt("Enter new client:");
+            const status = prompt("Enter new status:");
+            const assignedTo = document.getElementById(`assigned_to_${id}`).value;
+
+            const response = await fetch(`/requests/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    request_number: requestNumber,
+                    equipment: equipment,
+                    issue_type: issueType,
+                    description: description,
+                    client: client,
+                    status: status,
+                    assigned_to: assignedTo
+                }),
+            });
+
+            if (response.ok) {
+                fetchRequests();
+            }
+        }
+
+        async function deleteRequest(id) {
+            const response = await fetch(`/requests/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                fetchRequests();
+            }
+        }
+
+        async function addComment(id) {
+            const commentText = document.getElementById(`comment_${id}`).value;
+
+            const response = await fetch(`/requests/${id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: commentText
+                }),
+            });
+
+            if (response.ok) {
+                fetchRequests();
+            }
+        }
+
+        async function assignTo(id) {
+            const assignedTo = document.getElementById(`assigned_to_${id}`).value;
+
+            const response = await fetch(`/requests/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    assigned_to: assignedTo
+                }),
+            });
+
+            if (response.ok) {
+                fetchRequests();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchRequests);
+    </script>
+</body>
+</html>
